@@ -38,21 +38,12 @@ function heroku_bootstrap {
     echo "We must create a Heroku application to deploy to first."
     APP_NAME=$(heroku create "${CREATE_APP_NAME}" ${HEROKU_CREATE_OPTIONS} --json | jq --raw-output '.name')
 
-    if [ "${HEROKU_VERIFIED}" -eq "1" ]
-    then
-        echo "We will use JawsDB Maria edition, which is free and sufficient for a small instance"
-        heroku addons:create jawsdb -a "$APP_NAME"
+    echo "We will use Heroku Postgres, which is free and sufficient for a small instance"
+    heroku addons:create heroku-postgresql -a "$APP_NAME"
         
-        echo "Checking for additional addons"
-        check_addons
+    echo "Checking for additional addons"
+    check_addons
         
-        echo "Now we use the JAWS DB config as the database URL for Bitwarden"
-        echo "Supressing output due to sensitive nature."
-        heroku config:set DATABASE_URL="$(heroku config:get JAWSDB_URL -a "${APP_NAME}")" -a "${APP_NAME}" > /dev/null
-    else
-        heroku config:set DATABASE_URL="${OFFSITE_HEROKU_DB}" -a "${APP_NAME}" > /dev/null
-    fi
-    
     echo "Additionally set an Admin Token too in the event additional options are needed."
     echo "Supressing output due to sensitive nature."
     heroku config:set ADMIN_TOKEN="$(openssl rand -base64 48)" -a "${APP_NAME}" > /dev/null
